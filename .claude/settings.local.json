@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_navigate",
+      "Bash(curl *)",
+      "WebSearch",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_close",
+      "Bash(grep -ioE \"комментари[евйя]{0,3}[^<]{0,80}\")",
+      "Bash(sed 's/<[^>]*>//g')",
+      "Bash(python -c ' *)",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "Bash(python *)",
+      "mcp__playwright__browser_snapshot",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

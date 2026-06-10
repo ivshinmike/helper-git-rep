@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helper Git Rep | Agent Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-accent: #3b82f6;
+            --bg-dark: #0a0a0b;
+            --card-bg: #141416;
+            --border-color: #27272a;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e4e4e7;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass-card {
+            background: rgba(20, 20, 22, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .step-glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Language Toggle Styling */
+        .lang-toggle {
+            display: flex;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            padding: 2px;
+            cursor-pointer;
+        }
+        .lang-btn {
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--brand-accent);
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 lg:p-12">
+    <div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/20 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-900/20 rounded-full blur-[120px]"></div>
+    </div>
+
+    <header class="max-w-6xl mx-auto mb-12 flex justify-between items-end">
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-4">
+                <h1 class="text-5xl font-extrabold tracking-tighter gradient-text mb-2">Helper Git Rep</h1>
+                <!-- Language Switcher -->
+                <div class="lang-toggle">
+                    <div id="lang-en" class="lang-btn active" onclick="setLanguage('en')" title="Alt + E">EN</div>
+                    <div id="lang-ru" class="lang-btn" onclick="setLanguage('ru')" title="Alt + R">RU</div>
+                </div>
+            </div>
+            <p id="header-sub" class="text-zinc-400 text-lg font-light">Agent-driven project migration to GitHub</p>
+        </div>
+        <div class="hidden md:block text-right">
+            <span class="mono text-xs bg-zinc-800 px-3 py-1 rounded-full border border-zinc-700 text-zinc-400">
+                <span id="status-label">System Status</span>: <span class="text-green-400">Operational</span>
+            </span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <section class="lg:col-span-5 space-y-8">
+            <div class="glass-card p-8 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                </div>
+                <h2 id="form-title" class="text-2xl font-semibold mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    New Migration
+                </h2>
+
+                <form id="migrateForm" class="space-y-6">
+                    <div class="space-y-2">
+                        <label id="label-path" class="block text-sm font-medium text-zinc-400 ml-1">Project Local Path</label>
+                        <input type="text" id="project_path" required
+                               placeholder="D:\projects\my-awesome-app"
+                               class="w-full bg-zinc-900/50 border border-zinc-700 rounded-2xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-600">
+                    </div>
+                    <div class="space-y-2">
+                        <label id="label-repo" class="block text-sm font-medium text-zinc-400 ml-1">Target Repository Name</label>
+                        <input type="text" id="repo_name" required
+                               placeholder="my-awesome-app"
+                               class="w-full bg-zinc-900/50 border border-zinc-700 rounded-2xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-600">
+                    </div>
+                    <div class="flex items-center gap-3 ml-1">
+                        <input type="checkbox" id="force_restart" class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-blue-600 focus:ring-blue-500">
+                        <label id="label-force" for="force_restart" class="text-sm text-zinc-400 cursor-pointer select-none">Force restart if already exists</label>
+                    </div>
+                    <button type="submit" id="submitBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg shadow-blue-600/20">
+                        <span id="btn-text">Launch Agents</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section class="lg:col-span-7 space-y-8">
+            <div id="activeMigration" class="hidden glass-card p-8 rounded-3xl border-blue-500/30 bg-blue-500/5">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 id="activity-title" class="text-xl font-semibold flex items-center gap-2">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                        Agent Activity
+                    </h3>
+                    <span id="currentRepoName" class="mono text-sm text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20"></span>
+                </div>
+
+                <div class="relative flex justify-between items-center gap-4">
+                    <div class="absolute top-1/2 left-0 w-full h-0.5 bg-zinc-800 -translate-y-1/2 z-0"></div>
+                    <div id="progressLine" class="absolute top-1/2 left-0 h-0.5 bg-blue-500 -translate-y-1/2 z-0 transition-all duration-500" style="width: 0%"></div>
+
+                    <div class="step z-10 flex flex-col items-center gap-2" data-step="ANALYZED">
+                        <div class="step-dot w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center transition-all duration-300">
+                            <div class="dot-inner w-2 h-2 rounded-full bg-zinc-600"></div>
+                        </div>
+                        <span id="step-1" class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Analysis</span>
+                    </div>
+                    <div class="step z-10 flex flex-col items-center gap-2" data-step="CLEANED">
+                        <div class="step-dot w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center transition-all duration-300">
+                            <div class="dot-inner w-2 h-2 rounded-full bg-zinc-600"></div>
+                        </div>
+                        <span id="step-2" class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Cleaning</span>
+                    </div>
+                    <div class="step z-10 flex flex-col items-center gap-2" data-step="DOCUMENTED">
+                        <div class="step-dot w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center transition-all duration-300">
+                            <div class="dot-inner w-2 h-2 rounded-full bg-zinc-600"></div>
+                        </div>
+                        <span id="step-3" class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Docs</span>
+                    </div>
+                    <div class="step z-10 flex flex-col items-center gap-2" data-step="COMPLETED">
+                        <div class="step-dot w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center transition-all duration-300">
+                            <div class="dot-inner w-2 h-2 rounded-full bg-zinc-600"></div>
+                        </div>
+                        <span id="step-4" class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Publish</span>
+                    </div>
+                </div>
+
+                <div id="statusMessage" class="mt-8 text-center text-zinc-400 italic text-sm animate-pulse">
+                    Awaiting agent response...
+                </div>
+            </div>
+
+            <div class="glass-card p-8 rounded-3xl">
+                <h3 id="history-title" class="text-xl font-semibold mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2"></path></svg>
+                    Migration History
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-zinc-500 text-xs uppercase tracking-wider border-b border-zinc-800">
+                                <th id="th-project" class="pb-4 font-medium">Project</th>
+                                <th id="th-status" class="pb-4 font-medium">Status</th>
+                                <th id="th-updated" class="pb-4 font-medium text-right">Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusBoard" class="divide-y divide-zinc-800/50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toastContainer" class="fixed bottom-8 right-8 z-50 flex flex-col gap-4"></div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentLang = 'en';
+
+        const translations = {
+            en: {
+                headerSub: "Agent-driven project migration to GitHub",
+                statusLabel: "System Status",
+                formTitle: "New Migration",
+                labelPath: "Project Local Path",
+                labelRepo: "Target Repository Name",
+                labelForce: "Force restart if already exists",
+                btnText: "Launch Agents",
+                activityTitle: "Agent Activity",
+                step1: "Analysis",
+                step2: "Cleaning",
+                step3: "Docs",
+                step4: "Publish",
+                historyTitle: "Migration History",
+                thProject: "Project",
+                thStatus: "Status",
+                thUpdated: "Last Updated",
+                waiting: "Awaiting agent response...",
+                successMsg: "Successfully migrated {repo}!",
+                errorMsg: "Migration failed: {error}",
+                netError: "Network error. Is the server running?",
+                doneMsg: "Mission accomplished. Project is live on GitHub!",
+                mobilizing: "Agents are mobilizing..."
+            },
+            ru: {
+                headerSub: "Автоматизированный перенос проектов на GitHub",
+                statusLabel: "Статус системы",
+                formTitle: "Новая миграция",
+                labelPath: "Локальный путь к проекту",
+                labelRepo: "Имя репозитория на GitHub",
+                labelForce: "Принудительный перезапуск, если проект существует",
+                btnText: "Запустить агентов",
+                activityTitle: "Активность агентов",
+                step1: "Анализ",
+                step2: "Очистка",
+                step3: "Документация",
+                step4: "Публикация",
+                historyTitle: "История миграций",
+                thProject: "Проект",
+                thStatus: "Статус",
+                thUpdated: "Обновлено",
+                waiting: "Ожидание ответа агентов...",
+                successMsg: "Проект {repo} успешно перенесен!",
+                errorMsg: "Ошибка миграции: {error}",
+                netError: "Ошибка сети. Сервер запущен?",
+                doneMsg: "Миссия выполнена. Проект опубликован на GitHub!",
+                mobilizing: "Агенты мобилизуются..."
+            }
+        };
+
+        const statusMap = {
+            'PENDING': { color: 'bg-zinc-500', label: { en: 'Pending', ru: 'Ожидание' } },
+            'ANALYZED': { color: 'bg-blue-500', label: { en: 'Analyzed', ru: 'Проанализировано' } },
+            'CLEANED': { color: 'bg-indigo-500', label: { en: 'Cleaned', ru: 'Очищено' } },
+            'DOCUMENTED': { color: 'bg-purple-500', label: { la: 'Documented', ru: 'Документировано' } },
+            'COMPLETED': { color: 'bg-green-500', label: { en: 'Completed', ru: 'Завершено' } },
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('lang-ru').classList.toggle('active', lang === 'ru');
+            updateUILanguage();
+        }
+
+        // Keyboard shortcuts for language switching
+        window.addEventListener('keydown', (e) => {
+            // Alt + E for English
+            if (e.altKey && e.code === 'KeyE') {
+                e.preventDefault();
+                setLanguage('en');
+                showToast('Language switched to English', 'info');
+            }
+            // Alt + R for Russian
+            if (e.altKey && e.code === 'KeyR') {
+                e.preventDefault();
+                setLanguage('ru');
+                showToast('Язык переключен на Русский', 'info');
+            }
+        });
+
+        function updateUILanguage() {
+            const t = translations[currentLang];
+            document.getElementById('header-sub').textContent = t.headerSub;
+            document.getElementById('status-label').textContent = t.statusLabel;
+            document.getElementById('form-title').textContent = t.formTitle;
+            document.getElementById('label-path').textContent = t.labelPath;
+            document.getElementById('label-repo').textContent = t.labelRepo;
+            document.getElementById('label-force').textContent = t.labelForce;
+            document.getElementById('btn-text').textContent = t.btnText;
+            document.getElementById('activity-title').textContent = t.activityTitle;
+            document.getElementById('step-1').textContent = t.step1;
+            document.getElementById('step-2').textContent = t.step2;
+            document.getElementById('step-3').textContent = t.step3;
+            document.getElementById('step-4').textContent = t.step4;
+            document.getElementById('history-title').textContent = t.historyTitle;
+            document.getElementById('th-project').textContent = t.thProject;
+            document.getElementById('th-status').textContent = t.thStatus;
+            document.getElementById('th-updated').textContent = t.thUpdated;
+
+            // Update active migration if visible
+            if (!document.getElementById('activeMigration').classList.contains('hidden')) {
+                document.getElementById('statusMessage').textContent = t.waiting;
+            }
+        }
+
+        async function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-500' : (type === 'success' ? 'bg-green-500' : 'bg-blue-500');
+
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-2xl shadow-xl toast-enter flex items-center gap-3 font-medium`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-8m0 0h8m-8 0v8m0-8h8m-8 0V8m0 8h8m-8 0v8m0-8h8m-8 0v-8m0 8h8"></path></svg>
+                ${message}
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function updateProgress(status) {
+            const progressLine = document.getElementById('progressLine');
+            const steps = document.querySelectorAll('.step');
+            const statusOrder = ['ANALYZED', 'CLEANED', 'DOCUMENTED', 'COMPLETED'];
+            const index = statusOrder.indexOf(status);
+            if (index === -1) return;
+
+            const percentage = ((index + 1) / statusOrder.length) * 100;
+            progressLine.style.width = `${percentage}%`;
+
+            steps.forEach(step => {
+                const stepStatus = step.getAttribute('data-step');
+                const dot = step.querySelector('.step-dot');
+                const inner = step.querySelector('.dot-inner');
+
+                if (stepStatus === status || statusOrder.indexOf(stepStatus) < index) {
+                    dot.classList.remove('bg-zinc-800', 'border-zinc-700');
+                    dot.classList.add('bg-blue-600', 'border-blue-400', 'step-glow');
+                    inner.classList.remove('bg-zinc-600');
+                    inner.classList.add('bg-white');
+                } else {
+                    dot.classList.add('bg-zinc-800', 'border-zinc-700');
+                    dot.classList.remove('bg-blue-600', 'border-blue-400', 'step-glow');
+                    inner.classList.add('bg-zinc-600');
+                    inner.classList.remove('bg-white');
+                }
+            });
+        }
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                const board = document.getElementById('statusBoard');
+                board.innerHTML = '';
+
+                Object.entries(data.projects).forEach(([path, info]) => {
+                    const row = document.createElement('tr');
+                    row.className = 'group hover:bg-zinc-800/30 transition-all cursor-default';
+                    const statusLabel = statusMap[info.status]?.label[currentLang] || info.status;
+                    row.innerHTML = `
+                        <td class="py-4 mono text-xs text-zinc-400 group-hover:text-zinc-200 transition-colors">${path.split('\\').pop()}</td>
+                        <td class="py-4">
+                            <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusMap[info.status]?.color || 'bg-zinc-700'} text-white">
+                                ${statusLabel}
+                            </span>
+                        </td>
+                        <td class="py-4 text-right text-xs text-zinc-500 mono">${new Date(info.last_updated).toLocaleString()}</td>
+                    `;
+                    board.appendChild(row);
+                });
+            } catch (e) {
+                console.error("Status fetch error", e);
+            }
+        }
+
+        document.getElementById('migrateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const project_path = document.getElementById('project_path').value;
+            const repo_name = document.getElementById('repo_name').value;
+            const force_restart = document.getElementById('force_restart').checked;
+            const submitBtn = document.getElementById('submitBtn');
+            const activeDiv = document.getElementById('activeMigration');
+
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            activeDiv.classList.remove('hidden');
+            document.getElementById('currentRepoName').textContent = repo_name;
+            document.getElementById('statusMessage').textContent = translations[currentLang].mobilizing;
+
+            try {
+                const response = await fetch(`${API_BASE}/migrate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_path,
+                        repo_name,
+                        force_restart,
+                        language: currentLang
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const msg = translations[currentLang].successMsg.replace('{repo}', repo_name);
+                    showToast(msg, 'success');
+                    updateProgress('COMPLETED');
+                    document.getElementById('statusMessage').textContent = translations[currentLang].doneMsg;
+                    document.getElementById('statusMessage').classList.remove('animate-pulse');
+                } else {
+                    const msg = translations[currentLang].errorMsg.replace('{error}', result.error);
+                    showToast(msg, 'error');
+                    document.getElementById('statusMessage').textContent = `Error: ${result.error}`;
+                    document.getElementById('statusMessage').classList.remove('animate-pulse');
+                }
+            } catch (e) {
+                showToast(translations[currentLang].netError, 'error');
+                document.getElementById('statusMessage').textContent = 'Critical network error.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        fetchStatus();
+        setInterval(fetchStatus, 10000);
+        updateUILanguage();
+    </script>
+</body>
+</html>
