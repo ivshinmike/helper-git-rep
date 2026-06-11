@@ -19,7 +19,20 @@
       "mcp__playwright__browser_snapshot",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(gh repo *)",
+      "Bash(gh api *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(PYTHONPATH=. python *)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. python *)",
+      "Bash(mkdir -p /d/maintenance_audit_temp)",
+      "Bash(mv tmp/maintenance_audit /d/maintenance_audit_temp/)",
+      "Bash(mv tmp/maintenance_audit_batch2 /d/maintenance_audit_temp/)",
+      "Bash(mkdir -p C:/Users/mikha/maintenance_audit_temp)",
+      "Bash(mv tmp/maintenance_audit_batch2 C:/Users/mikha/maintenance_audit_temp/)",
+      "Bash(mkdir -p C:/Users/mikha/maintenance_audit_temp/maintenance_audit_batch3)",
+      "Read(//c/Users/mikha/maintenance_audit_temp/**)"
     ]
   }
 }

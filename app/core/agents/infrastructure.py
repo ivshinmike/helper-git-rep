@@ -18,7 +18,7 @@ class InfrastructureAgent(BaseAgent):
         Executes infrastructure tasks based on the provided action.
 
         Expected task_data keys:
-        - action: 'analyze' | 'clean' | 'publish'
+        - action: 'analyze' | 'clean' | 'publish' | 'maintenance_analyze' | 'maintenance_clean'
         - project_path: absolute path to the local project
         - repo_name: (optional) name for the GitHub repository
         """
@@ -39,6 +39,10 @@ class InfrastructureAgent(BaseAgent):
                 self.log("Missing repo_name for publish action", "error")
                 return {"success": False, "error": "repo_name is required for publishing"}
             return self._handle_publish(project_path, repo_name)
+        elif action == "maintenance_analyze":
+            return self._handle_maintenance_analyze(project_path)
+        elif action == "maintenance_clean":
+            return self._handle_maintenance_clean(project_path)
         else:
             self.log(f"Unknown action: {action}", "error")
             return {"success": False, "error": f"Unknown action: {action}"}
@@ -103,4 +107,44 @@ class InfrastructureAgent(BaseAgent):
         return {
             "success": True,
             "repo_url": f"https://github.com/user/{repo_name}" # Note: GitClient doesn't return the URL, would need to improve GitClient
+        }
+
+    def _handle_maintenance_analyze(self, project_path: str) -> Dict[str, Any]:
+        self.log(f"Performing maintenance analysis for project at {project_path}...")
+        git = GitClient(project_path)
+        analyzer = ProjectAnalyzer(project_path)
+
+        analysis = analyzer.analyze()
+
+        report = {
+            "is_git_repo": git.is_git_repo(),
+            "remote_url": git.get_remote_url(),
+            "has_readme": analysis['has_readme'],
+            "secrets_found": len(analysis['secrets']),
+            "secrets_details": analysis['secrets'],
+            "project_size": analysis['project_size']
+        }
+
+        self.log(f"Maintenance analysis complete. Repo: {report['is_git_repo']}, README: {report['has_readme']}, Secrets: {report['secrets_found']}")
+        return {"success": True, "data": report}
+
+    def _handle_maintenance_clean(self, project_path: str) -> Dict[str, Any]:
+        self.log(f"Performing maintenance cleaning for project at {project_path}...")
+        cleaner = ProjectCleaner(project_path)
+        analyzer = ProjectAnalyzer(project_path)
+
+        # Ensure .gitignore
+        cleaner.ensure_gitignore()
+
+        secrets = analyzer.scan_for_secrets()
+        for secret in secrets:
+            filename = secret['file']
+            if filename.startswith('.env') or filename.endswith('.env'):
+                cleaner.add_to_gitignore(filename)
+
+        self.log("Maintenance cleaning completed.")
+        return {
+            "success": True,
+            "secrets_found": len(secrets),
+            "gitignore_updated": True
         }

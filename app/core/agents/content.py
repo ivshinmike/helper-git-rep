@@ -21,7 +21,7 @@ class ContentAgent(BaseAgent):
         Executes content-related tasks.
 
         Expected task_data keys:
-        - action: 'analyze_content' | 'generate_readme' | 'validate_readme'
+        - action: 'analyze_content' | 'generate_readme' | 'validate_readme' | 'maintenance_readme_audit'
         - project_path: absolute path to the local project
         - repo_name: (optional) name for the GitHub repository
         """
@@ -41,6 +41,8 @@ class ContentAgent(BaseAgent):
             return self._handle_generate_readme(task_data)
         elif action == "validate_readme":
             return self._handle_validate_readme(project_path)
+        elif action == "maintenance_readme_audit":
+            return self._handle_maintenance_readme_audit(task_data)
         else:
             self.log(f"Unknown action: {action}", "error")
             return {"success": False, "error": f"Unknown action: {action}"}
@@ -132,3 +134,34 @@ class ContentAgent(BaseAgent):
         else:
             self.log(f"README validation failed: {verdict}", "warning")
             return {"success": False, "error": f"Validation failed: {verdict}"}
+
+    def _handle_maintenance_readme_audit(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Audits existing README and updates it if necessary.
+        """
+        project_path = task_data.get("project_path")
+        repo_name = task_data.get("repo_name", "Unknown Project")
+        language = task_data.get("language", "en")
+
+        self.log(f"Auditing README.md for {repo_name}...")
+
+        # 1. Check if README exists
+        try:
+            with open(os.path.join(project_path, 'README.md'), 'r', encoding='utf-8') as f:
+                current_readme = f.read()
+        except Exception:
+            self.log("README.md not found. Falling back to full generation.")
+            # If it doesn't exist, just generate a new one
+            return self._handle_generate_readme(task_data)
+
+        # 2. Run audit
+        audit_prompt = self.generator.generate_audit_prompt(current_readme, language=language)
+        verdict = self.llm_client.generate_text(prompt=audit_prompt)
+
+        if verdict and "VALID" == verdict.strip().upper():
+            self.log("README.md is already professional and complete.")
+            return {"success": True, "status": "valid"}
+        else:
+            self.log(f"README.md audit failed: {verdict}. Generating improved version...")
+            # If invalid, we generate a new one (or we could prompt for a diff, but for now full regen is safer)
+            return self._handle_generate_readme(task_data)

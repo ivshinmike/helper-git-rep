@@ -1,5 +1,6 @@
 import subprocess
 import os
+from typing import Optional
 
 class GitClient:
     """Wrapper for gh CLI and git commands."""
@@ -33,6 +34,17 @@ class GitClient:
 
         result = self._run(["git", "init"])
         return result.returncode == 0
+
+    def is_git_repo(self) -> bool:
+        """Checks if the project directory is a git repository."""
+        return os.path.exists(os.path.join(self.project_path, '.git'))
+
+    def get_remote_url(self) -> Optional[str]:
+        """Returns the URL of the origin remote."""
+        result = self._run(["git", "remote", "get-url", "origin"])
+        if result.returncode == 0:
+            return result.stdout.strip()
+        return None
 
     def commit_and_push(self, message: str = "Initial commit from helper-git-rep") -> bool:
         """Adds all files, commits, and pushes to origin main."""

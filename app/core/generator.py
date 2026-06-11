@@ -65,6 +65,33 @@ Use Markdown formatting. Return ONLY the content of the README.md file in {lang_
 """
         return prompt
 
+    def generate_audit_prompt(self, current_readme: str, language: str = 'en') -> str:
+        """Creates a prompt for the LLM to audit an existing README."""
+        context = self.collect_context()
+        lang_instruction = "English" if language == 'en' else "Russian"
+
+        prompt = f"""
+You are an expert Technical Writer. Please audit the existing README.md for this project.
+The audit should be conducted in {lang_instruction} language.
+
+PROJECT CONTEXT:
+{context}
+
+EXISTING README.md:
+{current_readme}
+
+Please evaluate if the README is:
+1. Accurate and reflects the current state of the project.
+2. Professional and well-formatted.
+3. Comprehensive (contains Title, Description, Features, Tech Stack, Installation, Usage).
+
+If the README is good, return 'VALID'.
+If it is missing key information or is unprofessional, return 'INVALID' followed by a detailed list of what is missing or what should be improved.
+
+Return ONLY 'VALID' or 'INVALID: <reasons>'.
+"""
+        return prompt
+
     def write_readme(self, content: str) -> bool:
         """Writes the generated content to README.md."""
         try:

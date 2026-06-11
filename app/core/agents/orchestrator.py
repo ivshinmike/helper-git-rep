@@ -23,11 +23,13 @@ class OrchestratorAgent(BaseAgent):
         """
         Main entry point for the orchestrator.
         Expected task_data keys:
+        - mode: 'migrate' (default) | 'maintenance'
         - project_path: absolute path to the local project
         - repo_name: name for the GitHub repository
         - force_restart: (optional) if True, starts from PENDING regardless of current state
         - language: (optional) 'en' or 'ru' for README generation
         """
+        mode = task_data.get("mode", "migrate")
         project_path = task_data.get("project_path")
         repo_name = task_data.get("repo_name")
         force_restart = task_data.get("force_restart", False)
@@ -36,6 +38,9 @@ class OrchestratorAgent(BaseAgent):
         if not project_path or not repo_name:
             self.log("Missing project_path or repo_name", "error")
             return {"success": False, "error": "project_path and repo_name are required"}
+
+        if mode == "maintenance":
+            return self.execute_maintenance(task_data)
 
         self.log(f"Starting orchestration for project: {project_path} -> {repo_name}")
 
@@ -127,3 +132,58 @@ class OrchestratorAgent(BaseAgent):
             "failed_phase": phase,
             "error": error_msg
         }
+
+    def execute_maintenance(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Flow for maintaining an existing repository.
+        """
+        project_path = task_data.get("project_path")
+        repo_name = task_data.get("repo_name")
+        language = task_data.get("language", "en")
+
+        self.log(f"Starting maintenance for project: {project_path}")
+
+        try:
+            # 1. MAINTENANCE ANALYSIS
+            analysis_res = self.infra_agent.execute({
+                "action": "maintenance_analyze",
+                "project_path": project_path
+            })
+            if not analysis_res["success"]:
+                return self._handle_failure("Maintenance Analysis", analysis_res)
+
+            self.log(f"Maintenance analysis success: {analysis_res['data']}")
+
+            # 2. MAINTENANCE CLEANING
+            clean_res = self.infra_agent.execute({
+                "action": "maintenance_clean",
+                "project_path": project_path
+            })
+            if not clean_res["success"]:
+                return self._handle_failure("Maintenance Cleaning", clean_res)
+
+            self.log("Maintenance cleaning completed.")
+
+            # 3. README AUDIT & UPDATE
+            readme_res = self.content_agent.execute({
+                "action": "maintenance_readme_audit",
+                "project_path": project_path,
+                "repo_name": repo_name,
+                "language": language
+            })
+            if not readme_res["success"]:
+                return self._handle_failure("README Audit", readme_res)
+
+            self.log("README audit and update completed.")
+
+            self.log(f"✨ Maintenance successfully completed for {project_path}!")
+            return {
+                "success": True,
+                "analysis": analysis_res["data"],
+                "cleaning": clean_res,
+                "readme": readme_res
+            }
+
+        except Exception as e:
+            self.log(f"Unexpected error during maintenance: {e}", "error")
+            return {"success": False, "error": str(e)}
